@@ -17,20 +17,19 @@ class Listener(object):
 
     def hook_receive(self):
         # TODO: Handle malformed data and other stuff
+        event_type = request.headers["X-GitHub-Event"]
         data: PayloadType = json.loads(request.data)
 
-        if "hook_id" in data:
+        if event_type == "ping":
             # Ping event: New hook added
             ok, message = self._report_new_hook(data)
             code = 200 if ok else 400
-        elif False:
+        elif event_type == "push":
+            # assume push event
             ok, message = self.handlefunc(data)
-            if ok:
-                code = 200
-            else:
-                code = 500
+            code = 200 if ok else 500
         else:
-            message = "Unknown payload"
+            message = f"Unknown event type: {event_type}"
             code = 400
         return Response(response=message, status=code)
 
