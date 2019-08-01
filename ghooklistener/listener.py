@@ -17,6 +17,13 @@ class Listener(object):
 
     def hook_receive(self):
         # TODO: Handle malformed data and other stuff
+        try:
+            request.headers["X-GitHub-Event"]
+        except KeyError:
+            message = "Unknown request\n"
+
+            return Response(response=message, status=500)
+
         event_type = request.headers["X-GitHub-Event"]
         data: PayloadType = json.loads(request.data)
 
