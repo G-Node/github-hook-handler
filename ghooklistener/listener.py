@@ -39,16 +39,28 @@ class Listener(object):
         return hmac.compare_digest(signature, sig_check)
 
     def hook_receive(self):
+        # Expect the worst
+        message = "Bad request\n"
         try:
             event_type = request.headers["X-GitHub-Event"]
-        except KeyError:
-            message = f"Unknown request\n"
+            signature = request.headers["X-Hub-Signature"]
+        except KeyError as err:
+            print(f"Missing request header: {err}\n")
+            return Response(response=message, status=HTTPStatus.BAD_REQUEST)
+
+        if not request.data:
+            print("[BadRequest] Missing payload\n")
+            return Response(response=message, status=HTTPStatus.BAD_REQUEST)
+
+        if not Listener.check_signature(signature, request.data):
+            print("[BadRequest] Signature mismatch\n")
             return Response(response=message, status=HTTPStatus.BAD_REQUEST)
 
         try:
             data: PayloadType = json.loads(request.data)
-        except json.decoder.JSONDecodeError:
-            return Response(response="Bad request\n", status=HTTPStatus.BAD_REQUEST)
+        except json.decoder.JSONDecodeError as err:
+            print(f"[BadRequest] JsonDecode error: {err}")
+            return Response(response=message, status=HTTPStatus.BAD_REQUEST)
 
         if event_type == "ping":
             # Ping event: New hook added
@@ -57,6 +69,8 @@ class Listener(object):
         elif event_type == "push":
             # assume push event
             ok, message = self.handlefunc(data)
+            # ToDo: currently the fail status is still not correct if
+            # the payload has missing information - should be BAD_REQUEST in this case.
             code = HTTPStatus.OK if ok else HTTPStatus.INTERNAL_SERVER_ERROR
         else:
             message = f"Unknown event type: {event_type}"
