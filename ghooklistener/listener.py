@@ -1,4 +1,6 @@
 import json
+
+from http import HTTPStatus
 from typing import Callable, Optional, Dict, Any, Tuple
 from flask import Flask, request, Response
 
@@ -22,7 +24,7 @@ class Listener(object):
         except KeyError:
             message = "Unknown request\n"
 
-            return Response(response=message, status=500)
+            return Response(response=message, status=HTTPStatus.BAD_REQUEST)
 
         event_type = request.headers["X-GitHub-Event"]
         data: PayloadType = json.loads(request.data)
@@ -30,14 +32,14 @@ class Listener(object):
         if event_type == "ping":
             # Ping event: New hook added
             ok, message = self._report_new_hook(data)
-            code = 200 if ok else 400
+            code = HTTPStatus.OK if ok else HTTPStatus.BAD_REQUEST
         elif event_type == "push":
             # assume push event
             ok, message = self.handlefunc(data)
-            code = 200 if ok else 500
+            code = HTTPStatus.OK if ok else HTTPStatus.INTERNAL_SERVER_ERROR
         else:
             message = f"Unknown event type: {event_type}"
-            code = 400
+            code = HTTPStatus.BAD_REQUEST
         return Response(response=message, status=code)
 
     def _report_new_hook(self, data: PayloadType) -> HandleFuncReturnType:
