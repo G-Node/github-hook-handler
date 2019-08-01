@@ -46,14 +46,19 @@ def pull(cloneloc: str, force: bool) -> bool:
 def main():
     address = ":0"
     secret_token = b''
-    if len(sys.argv) > 1:
-        address = sys.argv[1]
+
+    if len(sys.argv) < 1 or not path.exists(sys.argv[1]):
+        print("[Error] Provide git repositories directory as first argument")
+        exit(-1)
+
+    repos_dir = sys.argv[1]
     if len(sys.argv) > 2:
         secret_token = sys.argv[2].encode('utf-8')
+    if len(sys.argv) > 3:
+        address = sys.argv[3]
 
     # These could be handled via a config file
     repos = ["odml-terminologies", "odml-templates"]
-    repos_dir = "/tmp/repos"
 
     print("Setting up listener for cloner handler")
     clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token,
