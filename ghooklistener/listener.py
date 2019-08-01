@@ -18,16 +18,16 @@ class Listener(object):
                               methods=["POST"])
 
     def hook_receive(self):
-        # TODO: Handle malformed data and other stuff
         try:
-            request.headers["X-GitHub-Event"]
+            event_type = request.headers["X-GitHub-Event"]
         except KeyError:
-            message = "Unknown request\n"
-
+            message = f"Unknown request\n"
             return Response(response=message, status=HTTPStatus.BAD_REQUEST)
 
-        event_type = request.headers["X-GitHub-Event"]
-        data: PayloadType = json.loads(request.data)
+        try:
+            data: PayloadType = json.loads(request.data)
+        except json.decoder.JSONDecodeError:
+            return Response(response="Bad request\n", status=HTTPStatus.BAD_REQUEST)
 
         if event_type == "ping":
             # Ping event: New hook added
@@ -40,6 +40,8 @@ class Listener(object):
         else:
             message = f"Unknown event type: {event_type}"
             code = HTTPStatus.BAD_REQUEST
+
+        message = f"{message}\n"
         return Response(response=message, status=code)
 
     def _report_new_hook(self, data: PayloadType) -> HandleFuncReturnType:
@@ -52,8 +54,8 @@ class Listener(object):
             events = hook_config["events"]
             hook_url = hook_config["url"]
             created_at = hook_config["created_at"]
-        except KeyError as ke:
-            key = str(ke.args[0])
+        except KeyError as err:
+            key = str(err.args[0])
             msg = f"Missing expected key in payload: {key}"
             print(msg)
             return False, msg
