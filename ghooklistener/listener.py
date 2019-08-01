@@ -1,5 +1,7 @@
+import hmac
 import json
 
+from hashlib import sha1
 from http import HTTPStatus
 from typing import Callable, Optional, Dict, Any, Tuple
 from flask import Flask, request, Response
@@ -16,6 +18,25 @@ class Listener(object):
         self.handlefunc = handlefunc
         self.app.add_url_rule("/", view_func=self.hook_receive,
                               methods=["POST"])
+
+    @staticmethod
+    def check_signature(signature, data):
+        """
+        _check_signature computes the sha1 hexdigest of the request payload with
+        the applications secret key and compares it to the requests hexdigest signature.
+
+        :param signature: hexdigest signature of the request
+        :param data: bytes object containing the request payload
+        :return: boolean result of the digest comparison
+        """
+
+        # for testing purposes, will be removed once the token is loaded
+        # from a config file.
+        tmp_token = "iwillbereplaced".encode('utf-8')
+        hashed = hmac.new(tmp_token, data, sha1)
+        sig_check = f"sha1={hashed.hexdigest()}"
+
+        return hmac.compare_digest(signature, sig_check)
 
     def hook_receive(self):
         try:
