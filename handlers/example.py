@@ -6,11 +6,11 @@ perform a task, and return a boolean indicating success (True) or failure
 (False) and a message as a string (empty strings are allowed).
 """
 import sys
-from ghooklistener import Listener, PushPayloadType, HandleFuncReturnType
+from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 
 
 # Example handlefunc simply prints the data and returns OK
-def handlefunc(data: PushPayloadType) -> HandleFuncReturnType:
+def handlefunc(data: PayloadType) -> HandleFuncReturnType:
     print("Received data")
     print(data)
     return True, "OK"
