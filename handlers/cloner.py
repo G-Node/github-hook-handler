@@ -4,14 +4,18 @@ from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 
 
 def handlefunc(data: PayloadType) -> HandleFuncReturnType:
-    ref = data["ref"]
+    try:
+        ref = data["ref"]
+        forced = data["forced"]
+
+    except (KeyError, TypeError) as unwrap_err:
+        return False, f"Invalid payload: {str(unwrap_err)}"
+
     if ref != "refs/heads/master":
         print("Not master branch.  Not updating.")
         return True, "OK"
 
     # if it was a force push, we will have to fetch and reset
-    forced = data["forced"]
-
     if pull(forced):
         return True, "OK"
 
