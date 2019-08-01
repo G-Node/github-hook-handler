@@ -5,40 +5,28 @@ from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 from os import path
 
 
-GIT_DIR = "/tmp/git_repos"
-SUPPORTED_REPOS = ["odml-terminologies", "odml-templates"]
-
-
-def handlefunc(data: PayloadType) -> HandleFuncReturnType:
+def handlefunc(clone_loc: str, data: PayloadType) -> HandleFuncReturnType:
     try:
-        repo_name = data["repository"]["name"]
         ref = data["ref"]
         forced = data["forced"]
-
-    except (KeyError, TypeError) as unwrap_err:
+    except KeyError as unwrap_err:
         return False, f"Invalid payload: {str(unwrap_err)}"
-
-    if repo_name not in SUPPORTED_REPOS:
-        print(f"Unsupported repository {repo_name}")
-        return False, "Pull failed"
 
     if ref != "refs/heads/master":
         print("Not master branch.  Not updating.")
         return True, "OK"
 
     # if it was a force push, we will have to fetch and reset
-    if pull(repo_name, forced):
+    if pull(clone_loc, forced):
         return True, "OK"
 
     return False, "Pull failed"
 
 
-def pull(repo_name: str, force: bool) -> bool:
+def pull(cloneloc: str, force: bool) -> bool:
     if force:
         print("Force pushes not yet supported")
         print("Doing normal push")
-
-    cloneloc = path.join(GIT_DIR, repo_name)
 
     if not path.exists(cloneloc):
         print(f"Invalid git directory: {cloneloc}")
@@ -63,8 +51,13 @@ def main():
     if len(sys.argv) > 2:
         secret_token = sys.argv[2].encode('utf-8')
 
+    # These could be handled via a config file
+    repos = ["odml-terminologies", "odml-templates"]
+    repos_dir = "/tmp/repos"
+
     print("Setting up listener for cloner handler")
-    clonelistener = Listener("cloner", secret_token, handlefunc=handlefunc)
+    clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token,
+                             repos_dir=repos_dir, hosted_repos=repos)
     clonelistener.rundev(address)
 
 

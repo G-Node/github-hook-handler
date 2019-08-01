@@ -1,10 +1,11 @@
 import hmac
 import json
 
+from flask import Flask, request, Response
 from hashlib import sha1
 from http import HTTPStatus
-from typing import Callable, Optional, Dict, Any, Tuple
-from flask import Flask, request, Response
+from os import path
+from typing import Callable, Optional, Dict, Any, Tuple, List
 
 
 PayloadType = Dict[str, Any]
@@ -13,13 +14,15 @@ HandleFuncReturnType = Tuple[bool, str]
 
 class Listener(object):
 
-    def __init__(self, name: str, secret_token: bytes,
-                 handlefunc: Callable[[PayloadType], None]):
+    def __init__(self, name: str, handlefunc: Callable[[PayloadType], None],
+                 secret_token: bytes, repos_dir: str, hosted_repos: List[str]):
         self.app = Flask(name)
         self.handlefunc = handlefunc
         self.app.add_url_rule("/", view_func=self.hook_receive,
                               methods=["POST"])
         self.secret_token = secret_token
+        self.repos_dir = repos_dir
+        self.hosted_repos = hosted_repos
 
     def _check_signature(self, signature, data):
         """
@@ -65,8 +68,21 @@ class Listener(object):
             ok, message = self._report_new_hook(data)
             code = HTTPStatus.OK if ok else HTTPStatus.BAD_REQUEST
         elif event_type == "push":
+            # Identify the repository that needs to be pulled
+            try:
+                repo_name = data["repository"]["name"]
+            except (KeyError, TypeError) as err:
+                print(f"[BadRequest] Missing payload information: {err}\n")
+                return Response(response=message, status=HTTPStatus.BAD_REQUEST)
+
+            if repo_name not in self.hosted_repos:
+                print(f"[BadRequest] Unsupported repository {repo_name}\n")
+                return Response(response=message, status=HTTPStatus.BAD_REQUEST)
+
+            clone_dir = path.join(self.repos_dir, repo_name)
+
             # assume push event
-            ok, message = self.handlefunc(data)
+            ok, message = self.handlefunc(clone_dir, data)
             # ToDo: currently the fail status is still not correct if
             # the payload has missing information - should be BAD_REQUEST in this case.
             code = HTTPStatus.OK if ok else HTTPStatus.INTERNAL_SERVER_ERROR
