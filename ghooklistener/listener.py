@@ -13,14 +13,15 @@ HandleFuncReturnType = Tuple[bool, str]
 
 class Listener(object):
 
-    def __init__(self, name: str, handlefunc: Callable[[PayloadType], None]):
+    def __init__(self, name: str, secret_token: bytes,
+                 handlefunc: Callable[[PayloadType], None]):
         self.app = Flask(name)
         self.handlefunc = handlefunc
         self.app.add_url_rule("/", view_func=self.hook_receive,
                               methods=["POST"])
+        self.secret_token = secret_token
 
-    @staticmethod
-    def check_signature(signature, data):
+    def _check_signature(self, signature, data):
         """
         _check_signature computes the sha1 hexdigest of the request payload with
         the applications secret key and compares it to the requests hexdigest signature.
@@ -30,10 +31,7 @@ class Listener(object):
         :return: boolean result of the digest comparison
         """
 
-        # for testing purposes, will be removed once the token is loaded
-        # from a config file.
-        tmp_token = "iwillbereplaced".encode('utf-8')
-        hashed = hmac.new(tmp_token, data, sha1)
+        hashed = hmac.new(self.secret_token, data, sha1)
         sig_check = f"sha1={hashed.hexdigest()}"
 
         return hmac.compare_digest(signature, sig_check)
@@ -52,7 +50,7 @@ class Listener(object):
             print("[BadRequest] Missing payload\n")
             return Response(response=message, status=HTTPStatus.BAD_REQUEST)
 
-        if not Listener.check_signature(signature, request.data):
+        if not self._check_signature(signature, request.data):
             print("[BadRequest] Signature mismatch\n")
             return Response(response=message, status=HTTPStatus.BAD_REQUEST)
 

@@ -57,10 +57,14 @@ def pull(repo_name: str, force: bool) -> bool:
 
 def main():
     address = ":0"
+    secret_token = b''
     if len(sys.argv) > 1:
         address = sys.argv[1]
+    if len(sys.argv) > 2:
+        secret_token = sys.argv[2].encode('utf-8')
+
     print("Setting up listener for cloner handler")
-    clonelistener = Listener("cloner", handlefunc=handlefunc)
+    clonelistener = Listener("cloner", secret_token, handlefunc=handlefunc)
     clonelistener.rundev(address)
 
 
