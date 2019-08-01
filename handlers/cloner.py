@@ -1,6 +1,8 @@
 import sys
 import subprocess as sp
+
 from ghooklistener import Listener, PayloadType, HandleFuncReturnType
+from os import path
 
 
 def handlefunc(data: PayloadType) -> HandleFuncReturnType:
@@ -27,9 +29,15 @@ def pull(force: bool) -> bool:
         print("Force pushes not yet supported")
         print("Doing normal push")
     cloneloc = "/tmp/place"
+
+    if not path.exists(cloneloc):
+        print(f"Invalid git directory: {cloneloc}")
+        return False
+
     p = sp.run(["git", "pull"],
                stdout=sp.PIPE, stderr=sp.PIPE,
                cwd=cloneloc, encoding="utf-8")
+
     stdout, stderr = p.stdout.strip(), p.stderr.strip()
     print(f"Out: {stdout}")
     print(f"Err: {stderr}")
