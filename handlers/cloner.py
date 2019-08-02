@@ -2,6 +2,7 @@ import sys
 import subprocess as sp
 
 from ghooklistener import Listener, PayloadType, HandleFuncReturnType
+from http import HTTPStatus
 from os import path
 
 
@@ -14,23 +15,24 @@ def handlefunc(data: PayloadType) -> HandleFuncReturnType:
         ref = data["ref"]
         forced = data["forced"]
     except (KeyError, TypeError) as unwrap_err:
-        return False, f"Invalid payload: {str(unwrap_err)}"
+        print(f"Invalid payload {unwrap_err}")
+        return "Invalid payload\n", HTTPStatus.BAD_REQUEST
 
     if repo_name not in CONFIG['hosted_repos']:
         print(f"[BadRequest] Unsupported repository {repo_name}")
-        return False, f"Invalid payload"
+        return "Invalid payload\n", HTTPStatus.BAD_REQUEST
 
     clone_loc = path.join(CONFIG['repos_dir'], repo_name)
 
     if ref != "refs/heads/master":
         print("Not master branch.  Not updating.")
-        return True, "OK"
+        return "OK\n", HTTPStatus.OK
 
     # if it was a force push, we will have to fetch and reset
     if pull(clone_loc, forced):
-        return True, "OK"
+        return "OK\n", HTTPStatus.OK
 
-    return False, "Pull failed"
+    return "Internal server error\n", HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 def pull(cloneloc: str, force: bool) -> bool:

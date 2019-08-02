@@ -8,12 +8,13 @@ from typing import Callable, Optional, Dict, Any, Tuple
 
 
 PayloadType = Dict[str, Any]
-HandleFuncReturnType = Tuple[bool, str]
+HandleFuncReturnType = Tuple[str, HTTPStatus]
 
 
 class Listener(object):
 
-    def __init__(self, name: str, handlefunc: Callable[[PayloadType], None],
+    def __init__(self, name: str,
+                 handlefunc: Callable[[PayloadType], HandleFuncReturnType],
                  secret_token: bytes):
         self.app = Flask(name)
         self.handlefunc = handlefunc
@@ -62,14 +63,10 @@ class Listener(object):
 
         if event_type == "ping":
             # Ping event: New hook added
-            ok, message = self._report_new_hook(data)
-            code = HTTPStatus.OK if ok else HTTPStatus.BAD_REQUEST
+            message, code = self._report_new_hook(data)
         elif event_type == "push":
             # assume push event
-            ok, message = self.handlefunc(data)
-            # ToDo: currently the fail status is still not correct if
-            # the payload has missing information - should be BAD_REQUEST in this case.
-            code = HTTPStatus.OK if ok else HTTPStatus.INTERNAL_SERVER_ERROR
+            message, code = self.handlefunc(data)
         else:
             message = f"Unknown event type: {event_type}"
             code = HTTPStatus.BAD_REQUEST
@@ -91,14 +88,14 @@ class Listener(object):
             key = str(err.args[0])
             msg = f"Missing expected key in payload: {key}"
             print(msg)
-            return False, msg
+            return f"{msg}\n", HTTPStatus.BAD_REQUEST
 
         print(f"New hook with ID {hook_id} has been set up:")
         print(f" - Hook URL: {hook_url}")
         print(f" - Hook events: {', '.join(events)}")
         print(f" - Creation date: {created_at}")
         print(f"GH zen: {zen}")
-        return True, "Pong"
+        return "Pong\n", HTTPStatus.OK
 
     def rundev(self, address: Optional[str] = None):
         host: Optional[str] = None

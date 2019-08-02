@@ -6,14 +6,16 @@ perform a task, and return a boolean indicating success (True) or failure
 (False) and a message as a string (empty strings are allowed).
 """
 import sys
+
 from ghooklistener import Listener, PayloadType, HandleFuncReturnType
+from http import HTTPStatus
 
 
 # Example handlefunc simply prints the data and returns OK
 def handlefunc(data: PayloadType) -> HandleFuncReturnType:
     print("Received data")
     print(data)
-    return True, "OK"
+    return "OK\n", HTTPStatus.OK
 
 
 # Set up a listener instance and run in dev mode
