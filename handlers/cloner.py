@@ -5,12 +5,22 @@ from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 from os import path
 
 
-def handlefunc(clone_loc: str, data: PayloadType) -> HandleFuncReturnType:
+CONFIG = {"repos_dir": "", "repos": []}
+
+
+def handlefunc(data: PayloadType) -> HandleFuncReturnType:
     try:
+        repo_name = data["repository"]["name"]
         ref = data["ref"]
         forced = data["forced"]
-    except KeyError as unwrap_err:
+    except (KeyError, TypeError) as unwrap_err:
         return False, f"Invalid payload: {str(unwrap_err)}"
+
+    if repo_name not in CONFIG['hosted_repos']:
+        print(f"[BadRequest] Unsupported repository {repo_name}")
+        return False, f"Invalid payload"
+
+    clone_loc = path.join(CONFIG['repos_dir'], repo_name)
 
     if ref != "refs/heads/master":
         print("Not master branch.  Not updating.")
@@ -57,12 +67,11 @@ def main():
     if len(sys.argv) > 3:
         address = sys.argv[3]
 
-    # These could be handled via a config file
-    repos = ["odml-terminologies", "odml-templates"]
+    CONFIG['repos_dir'] = repos_dir
+    CONFIG['hosted_repos'] = ["odml-terminologies", "odml-templates"]
 
     print("Setting up listener for cloner handler")
-    clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token,
-                             repos_dir=repos_dir, hosted_repos=repos)
+    clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token)
     clonelistener.rundev(address)
 
 
