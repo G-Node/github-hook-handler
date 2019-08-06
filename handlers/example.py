@@ -7,8 +7,9 @@ perform a task, and return a boolean indicating success (True) or failure
 """
 import sys
 
-from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 from http import HTTPStatus
+
+from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 
 
 # Example handlefunc simply prints the data and returns OK
@@ -18,9 +19,10 @@ def handlefunc(data: PayloadType) -> HandleFuncReturnType:
     return "OK\n", HTTPStatus.OK
 
 
-def create_app(secret_token):
-
-    clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token)
+def create_app(secret_token: str):
+    print("Setting up listener for example handler")
+    secret_token = secret_token.encode('utf-8')
+    clonelistener = Listener("example", handlefunc=handlefunc, secret_token=secret_token)
 
     return clonelistener
 
@@ -33,7 +35,7 @@ def main():
     if len(sys.argv) > 1:
         address = sys.argv[1]
     if len(sys.argv) > 2:
-        secret_token = sys.argv[2].encode('utf-8')
+        secret_token = sys.argv[2]
 
     print("Setting up listener for example handler")
     listener = create_app(secret_token)
