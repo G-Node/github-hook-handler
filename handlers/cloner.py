@@ -55,6 +55,17 @@ def pull(cloneloc: str, force: bool) -> bool:
     return not p.returncode
 
 
+def create_app(repos_dir, secret_token):
+
+    CONFIG['repos_dir'] = repos_dir
+    CONFIG['hosted_repos'] = ["odml-terminologies", "odml-templates"]
+
+    print("Setting up listener for cloner handler")
+    clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token)
+
+    return clonelistener
+
+
 def main():
     address = ":0"
     secret_token = b''
@@ -69,12 +80,8 @@ def main():
     if len(sys.argv) > 3:
         address = sys.argv[3]
 
-    CONFIG['repos_dir'] = repos_dir
-    CONFIG['hosted_repos'] = ["odml-terminologies", "odml-templates"]
-
-    print("Setting up listener for cloner handler")
-    clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token)
-    clonelistener.rundev(address)
+    listener = create_app(repos_dir, secret_token)
+    listener.rundev(address)
 
 
 if __name__ == "__main__":
