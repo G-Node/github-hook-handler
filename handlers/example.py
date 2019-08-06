@@ -7,8 +7,9 @@ perform a task, and return a boolean indicating success (True) or failure
 """
 import sys
 
-from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 from http import HTTPStatus
+
+from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 
 
 # Example handlefunc simply prints the data and returns OK

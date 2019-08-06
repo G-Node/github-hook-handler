@@ -1,9 +1,10 @@
 import sys
 import subprocess as sp
 
-from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 from http import HTTPStatus
 from os import path
+
+from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 
 
 CONFIG = {"repos_dir": "", "repos": []}
