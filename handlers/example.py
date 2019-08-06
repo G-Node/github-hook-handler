@@ -18,14 +18,26 @@ def handlefunc(data: PayloadType) -> HandleFuncReturnType:
     return "OK\n", HTTPStatus.OK
 
 
+def create_app(secret_token):
+
+    clonelistener = Listener("cloner", handlefunc=handlefunc, secret_token=secret_token)
+
+    return clonelistener
+
+
 # Set up a listener instance and run in dev mode
 def main():
     address = ":0"
+    secret_token = b''
+
     if len(sys.argv) > 1:
         address = sys.argv[1]
-    print("Setting up listener for cloner handler")
-    clonelistener = Listener("cloner", handlefunc=handlefunc)
-    clonelistener.rundev(address)
+    if len(sys.argv) > 2:
+        secret_token = sys.argv[2].encode('utf-8')
+
+    print("Setting up listener for example handler")
+    listener = create_app(secret_token)
+    listener.rundev(address)
 
 
 if __name__ == "__main__":
