@@ -113,3 +113,6 @@ class Listener(object):
                 port = None
 
         self.app.run(host=host, port=port, debug=True)
+
+    def run(self):
+        self.app.run()
