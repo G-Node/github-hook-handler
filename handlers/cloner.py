@@ -3,6 +3,7 @@ import subprocess as sp
 
 from http import HTTPStatus
 from os import path
+from typing import List
 
 from ghooklistener import Listener, PayloadType, HandleFuncReturnType
 
@@ -56,9 +57,9 @@ def pull(cloneloc: str, force: bool) -> bool:
     return not p.returncode
 
 
-def create_app(repos_dir: str, secret_token: str):
+def create_app(repos_dir: str, secret_token: str, hosted_repos: List):
     CONFIG['repos_dir'] = repos_dir
-    CONFIG['hosted_repos'] = ["odml-terminologies", "odml-templates"]
+    CONFIG['hosted_repos'] = hosted_repos
 
     print("Setting up listener for cloner handler")
     secret_token = secret_token.encode('utf-8')
@@ -70,6 +71,7 @@ def create_app(repos_dir: str, secret_token: str):
 def main():
     address = ":0"
     secret_token = b''
+    hosted_repos = []
 
     if len(sys.argv) < 1 or not path.exists(sys.argv[1]):
         print("[Error] Provide git repositories directory as first argument")
@@ -79,9 +81,11 @@ def main():
     if len(sys.argv) > 2:
         secret_token = sys.argv[2]
     if len(sys.argv) > 3:
-        address = sys.argv[3]
+        hosted_repos = [sys.argv[3]]
+    if len(sys.argv) > 4:
+        address = sys.argv[4]
 
-    listener = create_app(repos_dir, secret_token)
+    listener = create_app(repos_dir, secret_token, hosted_repos)
     listener.rundev(address)
 
 
