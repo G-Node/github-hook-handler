@@ -46,15 +46,14 @@ def pull(cloneloc: str, force: bool) -> bool:
         print(f"Invalid git directory: {cloneloc}")
         return False
 
-    p = sp.run(["git", "pull"],
-               stdout=sp.PIPE, stderr=sp.PIPE,
-               cwd=cloneloc, encoding="utf-8")
+    proc = sp.run(["git", "pull"],
+                  stdout=sp.PIPE, stderr=sp.PIPE, cwd=cloneloc, encoding="utf-8")
 
-    stdout, stderr = p.stdout.strip(), p.stderr.strip()
+    stdout, stderr = proc.stdout.strip(), proc.stderr.strip()
     print(f"Out: {stdout}")
     print(f"Err: {stderr}")
 
-    return not p.returncode
+    return not proc.returncode
 
 
 def create_app(repos_dir: str, secret_token: str, hosted_repos: List):
@@ -75,7 +74,7 @@ def main():
 
     if len(sys.argv) < 1 or not path.exists(sys.argv[1]):
         print("[Error] Provide git repositories directory as first argument")
-        exit(-1)
+        sys.exit(-1)
 
     repos_dir = sys.argv[1]
     if len(sys.argv) > 2:
