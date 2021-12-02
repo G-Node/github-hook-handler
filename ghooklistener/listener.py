@@ -1,17 +1,18 @@
 import hmac
 import json
 
-from flask import Flask, request, Response
 from hashlib import sha1
 from http import HTTPStatus
 from typing import Callable, Optional, Dict, Any, Tuple
+
+from flask import Flask, request, Response
 
 
 PayloadType = Dict[str, Any]
 HandleFuncReturnType = Tuple[str, HTTPStatus]
 
 
-class Listener(object):
+class Listener:
 
     def __init__(self, name: str,
                  handlefunc: Callable[[PayloadType], HandleFuncReturnType],
